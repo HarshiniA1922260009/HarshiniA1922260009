@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ParkWise — Smart Parking System</title>
+<style>
+  :root {
+    --bg: #eef2f5;
+    --card: #ffffff;
+    --text: #182230;
+    --muted: #64748b;
+    --teal: #178582;
+    --teal-dark: #116664;
+    --blue: #2364aa;
+    --blue-dark: #194b82;
+    --amber: #d97706;
+    --green: #16a34a;
+    --border: #dce4ec;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+  body { background: var(--bg); color: var(--text); min-height: 100vh; }
+  header {
+    background: #fff; border-bottom: 1px solid var(--border);
+    padding: 0 32px; height: 64px; display: flex; align-items: center; justify-content: space-between;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 1.25rem; color: #0f172a; }
+  .brand-badge {
+    width: 34px; height: 34px; border-radius: 50%; background: var(--teal);
+    color: #fff; display: grid; place-items: center; font-weight: 800; font-size: 1rem;
+  }
+  nav { display: flex; gap: 28px; height: 100%; }
+  nav button {
+    background: none; border: none; border-bottom: 3px solid transparent;
+    font-size: 0.95rem; font-weight: 600; color: var(--muted); cursor: pointer; padding: 0 4px;
+  }
+  nav button.active { color: var(--blue); border-bottom-color: var(--blue); }
+  .server-pill {
+    font-size: 0.78rem; font-weight: 600; padding: 5px 12px; border-radius: 999px;
+    background: #e6f4f1; color: var(--teal-dark); display: flex; align-items: center; gap: 6px;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); }
+  .container { max-width: 1380px; margin: 0 auto; padding: 24px 32px; }
+  .top-row {
+    display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between;
+    gap: 20px; margin-bottom: 24px;
+  }
+  .title-block h1 { font-size: 1.55rem; font-weight: 700; color: #0f172a; }
+  .title-block p { color: var(--muted); font-size: 0.9rem; margin-top: 3px; }
+  .kpi-group { display: flex; gap: 16px; flex-wrap: wrap; }
+  .kpi {
+    min-width: 185px; background: var(--card); border-radius: 12px; padding: 14px 20px;
+    box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05); border-left: 5px solid var(--blue);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .kpi.occ { border-left-color: var(--amber); background: #fff9f2; }
+  .kpi.avail { border-left-color: var(--green); background: #f2fbf5; }
+  .kpi-label { font-size: 0.85rem; font-weight: 600; color: #334155; }
+  .kpi-val { font-size: 1.8rem; font-weight: 800; margin-top: 2px; }
+  .kpi.occ .kpi-val { color: #c2590a; }
+  .kpi.avail .kpi-val { color: #15803d; }
+  .main-grid { display: grid; grid-template-columns: 310px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 960px) { .main-grid { grid-template-columns: 1fr; } }
+  .left-col { display: flex; flex-direction: column; gap: 20px; }
+  .panel {
+    background: var(--card); border-radius: 14px; overflow: hidden;
+    box-shadow: 0 3px 12px rgba(15, 23, 42, 0.06); border: 1px solid var(--border);
+  }
+  .panel-head-blue { background: var(--blue); color: #fff; padding: 16px 20px; }
+  .panel-head-teal { background: var(--teal); color: #fff; padding: 16px 20px; }
+  .panel-head-blue h2, .panel-head-teal h2 { font-size: 1.1rem; font-weight: 700; }
+  .panel-head-blue p, .panel-head-teal p { font-size: 0.8rem; opacity: 0.9; margin-top: 3px; }
+  .panel-body { padding: 18px 20px; }
+  label { display: block; font-size: 0.85rem; font-weight: 600; margin-bottom: 6px; color: #1e293b; }
+  input, select {
+    width: 100%; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 8px;
+    font-size: 0.92rem; margin-bottom: 14px; outline: none; background: #fff;
+  }
+  input:focus, select:focus { border-color: var(--blue); box-shadow: 0 0 0 3px rgba(35,100,170,0.12); }
+  .btn-primary {
+    width: 100%; padding: 11px; border: none; border-radius: 8px; background: var(--blue);
+    color: #fff; font-weight: 700; font-size: 0.92rem; cursor: pointer; transition: 0.15s;
+  }
+  .btn-primary:hover { background: var(--blue-dark); }
+  .log-list { display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; }
+  .log-item {
+    padding-left: 10px; border-left: 3px solid var(--blue); font-size: 0.84rem; line-height: 1.35; color: #1e293b;
+  }
+  .log-item.exit { border-left-color: var(--teal); }
+  .grid-card { padding: 20px 24px; }
+  .grid-header {
+    display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center;
+    gap: 12px; margin-bottom: 16px;
+  }
+  .grid-header h2 { font-size: 1.15rem; font-weight: 700; }
+  .legend { display: flex; gap: 16px; font-size: 0.82rem; color: var(--muted); align-items: center; }
+  .leg-box { width: 14px; height: 14px; border-radius: 3px; display: inline-block; vertical-align: middle; margin-right: 5px; }
+  .floor-wrapper {
+    background: #e2e8f0; border: 2px solid #94a3b8; border-radius: 12px; padding: 16px;
+  }
+  .level-section { margin-bottom: 16px; }
+  .level-section:last-child { margin-bottom: 0; }
+  .level-tag {
+    display: inline-block; font-size: 0.78rem; font-weight: 700; color: #334155;
+    background: #cbd5e1; padding: 3px 10px; border-radius: 6px; margin-bottom: 10px;
+  }
+  .slots-grid {
+    display: grid; grid-template-columns: repeat(15, minmax(0, 1fr)); gap: 6px;
+  }
+  @media (max-width: 1150px) { .slots-grid { grid-template-columns: repeat(10, minmax(0, 1fr)); } }
+  .slot {
+    height: 44px; border-radius: 5px; background: #26948c; color: #fff;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    font-size: 0.7rem; font-weight: 700; cursor: pointer; position: relative;
+    border: 1px solid rgba(255,255,255,0.25); transition: transform 0.1s, box-shadow 0.1s;
+  }
+  .slot:hover { transform: translateY(-2px); box-shadow: 0 4px 8px rgba(0,0,0,0.18); z-index: 5; }
+  .slot.occupied { background: #2563eb; }
+  .slot-plate {
+    font-size: 0.56rem; background: #fff; color: #0f172a; padding: 1px 3px;
+    border-radius: 2px; margin-top: 2px; max-width: 92%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .drive-lane {
+    height: 24px; margin: 10px 0; border-top: 2px dashed #94a3b8; border-bottom: 2px dashed #94a3b8;
+    display: flex; align-items: center; justify-content: space-around; color: #64748b; font-size: 0.75rem; font-weight: 700;
+  }
+  .toast {
+    position: fixed; bottom: 22px; right: 22px; background: #0f172a; color: #fff;
+    padding: 12px 18px; border-radius: 10px; font-size: 0.88rem; font-weight: 600;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2); opacity: 0; pointer-events: none; transition: 0.25s;
+  }
+  .toast.show { opacity: 1; }
+  .modal-backdrop {
+    position: fixed; inset: 0; background: rgba(15,23,42,0.45); display: none;
+    align-items: center; justify-content: center; z-index: 50;
+  }
+  .modal-backdrop.open { display: flex; }
+  .modal {
+    background: #fff; border-radius: 14px; padding: 22px; width: 350px;
+    box-shadow: 0 12px 30px rgba(0,0,0,0.2);
+  }
+  .modal h3 { font-size: 1.1rem; margin-bottom: 10px; }
+  .modal p { font-size: 0.88rem; color: #475569; margin-bottom: 6px; line-height: 1.5; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; }
+  .btn-release { flex: 1; padding: 10px; border: none; border-radius: 8px; background: var(--teal); color: #fff; font-weight: 700; cursor: pointer; }
+  .btn-close { padding: 10px 14px; border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; font-weight: 600; cursor: pointer; }
+  .tab-view { display: none; }
+  .tab-view.active { display: block; }
+  table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  th { background: #f8fafc; color: #475569; font-weight: 700; }
+  pre { background: #0f172a; color: #e2e8f0; padding: 16px; border-radius: 10px; overflow-x: auto; font-size: 0.82rem; line-height: 1.45; }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="brand-badge">P</div>ParkWise</div>
+  <nav>
+    <button class="active" onclick="switchTab('dashboard', this)">Dashboard</button>
+    <button onclick="switchTab('occupied-list', this)">Slot Management</button>
+    <button onclick="switchTab('c-source', this)">C Backend Code</button>
+  </nav>
+  <div class="server-pill"><span class="dot"></span>Standalone Ready</div>
+</header>
+
+<div class="container">
+  <div class="top-row">
+    <div class="title-block">
+      <h1>Top KPI Banner</h1>
+      <p>Displaying current parking inventory across all levels.</p>
+    </div>
+    <div class="kpi-group">
+      <div class="kpi"><div><div class="kpi-label">Total Slots</div><div class="kpi-val" id="kpi-total">150</div></div></div>
+      <div class="kpi occ"><div><div class="kpi-label">Occupied Slots</div><div class="kpi-val" id="kpi-occ">0</div></div></div>
+      <div class="kpi avail"><div><div class="kpi-label">Available Slots</div><div class="kpi-val" id="kpi-avail">150</div></div></div>
+    </div>
+  </div>
+
+  <div id="tab-dashboard" class="tab-view active">
+    <div class="main-grid">
+      <div class="left-col">
+        <div class="panel">
+          <div class="panel-head-blue">
+            <h2>Park Vehicle (Enter)</h2>
+            <p>Assign an available slot when a vehicle enters.</p>
+          </div>
+          <div class="panel-body">
+            <label for="plate-input">License Plate</label>
+            <input id="plate-input" type="text" placeholder="e.g. TN-09-AB-1234" />
+            <label for="type-input">Vehicle Type</label>
+            <select id="type-input">
+              <option value="Sedan">Sedan (₹40/hr)</option>
+              <option value="SUV">SUV (₹50/hr)</option>
+              <option value="Hatchback">Hatchback (₹30/hr)</option>
+              <option value="EV">EV (₹35/hr)</option>
+              <option value="Bike">Bike (₹20/hr)</option>
+            </select>
+            <label for="level-input">Preferred Level</label>
+            <select id="level-input">
+              <option value="0">Auto-Assign Nearest Slot</option>
+              <option value="1">Level P1 (Slots 1 - 75)</option>
+              <option value="2">Level P2 (Slots 76 - 150)</option>
+            </select>
+            <button class="btn-primary" onclick="parkVehicle()">Assign Slot &amp; Generate Ticket</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head-teal">
+            <h2>Recent Actions</h2>
+            <p>Free the slot when a vehicle leaves.</p>
+          </div>
+          <div class="panel-body">
+            <div class="log-list" id="log-list"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel grid-card">
+        <div class="grid-header">
+          <h2>Visual Grid (Click any slot to assign or free)</h2>
+          <div class="legend">
+            <span><i class="leg-box" style="background:#26948c"></i>Available</span>
+            <span><i class="leg-box" style="background:#2563eb"></i>Occupied</span>
+          </div>
+        </div>
+        <div class="floor-wrapper">
+          <div class="level-section">
+            <div class="level-tag">LEVEL P1 (SLOTS 001 – 075)</div>
+            <div class="slots-grid" id="grid-p1"></div>
+          </div>
+          <div class="drive-lane"><span>&#8594; ENTRY LANE</span><span>MAIN DRIVEWAY</span><span>EXIT LANE &#8594;</span></div>
+          <div class="level-section">
+            <div class="level-tag">LEVEL P2 (SLOTS 076 – 150)</div>
+            <div class="slots-grid" id="grid-p2"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="tab-occupied-list" class="tab-view">
+    <div class="panel grid-card">
+      <div class="grid-header">
+        <h2>Currently Parked Vehicles &amp; Billing</h2>
+        <input id="search-box" type="text" placeholder="Filter by plate number..." style="width:260px;margin:0" oninput="renderTable()" />
+      </div>
+      <table>
+        <thead><tr><th>Slot</th><th>Level</th><th>License Plate</th><th>Vehicle Type</th><th>Entry Time</th><th>Estimated Fee</th><th>Action</th></tr></thead>
+        <tbody id="occ-table-body"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div id="tab-c-source" class="tab-view">
+    <div class="panel grid-card">
+      <div class="grid-header">
+        <h2>Equivalent C Logic (Arrays, Structs, Loops &amp; Conditions)</h2>
+        <button class="btn-primary" style="width:auto;padding:8px 16px" onclick="resetDemo()">Reset Demo Data</button>
+      </div>
+      <pre>#define TOTAL_SLOTS 150
+
+typedef struct {
+    int id;
+    int level;
+    int occupied;
+    char plate[32];
+    char vehicle_type[24];
+    char entry_time[32];
+} ParkingSlot;
+
+ParkingSlot slots[TOTAL_SLOTS];
+
+int assign_slot(const char *plate, const char *type, int pref_level) {
+    for (int i = 0; i &lt; TOTAL_SLOTS; i++) {
+        if (!slots[i].occupied &amp;&amp; (pref_level == 0 || slots[i].level == pref_level)) {
+            slots[i].occupied = 1;
+            strcpy(slots[i].plate, plate);
+            strcpy(slots[i].vehicle_type, type);
+            return slots[i].id;
+        }
+    }
+    return -1;
+}</pre>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="slot-modal">
+  <div class="modal">
+    <h3 id="modal-title">Slot Details</h3>
+    <p id="modal-info"></p>
+    <div class="modal-actions">
+      <button class="btn-release" id="modal-action-btn">Free Slot</button>
+      <button class="btn-close" onclick="closeModal()">Close</button>
+    </div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const TOTAL_SLOTS = 150;
+const RATES = { Bike: 20, Hatchback: 30, EV: 35, Sedan: 40, SUV: 50 };
+
+function defaultState() {
+  const slots = [];
+  for (let i = 0; i < TOTAL_SLOTS; i++) {
+    slots.push({ id: i + 1, level: i < 75 ? 1 : 2, occupied: false, plate: '', type: '', time: '', hours: 1, fee: 0 });
+  }
+  const samples = [
+    { idx: 3, plate: 'TN-01-AB-1234', type: 'Sedan', hrs: 1 },
+    { idx: 14, plate: 'TN-07-CD-9876', type: 'SUV', hrs: 2 },
+    { idx: 22, plate: 'TN-09-EF-4521', type: 'Hatchback', hrs: 1 },
+    { idx: 37, plate: 'TN-11-GH-7788', type: 'EV', hrs: 3 },
+    { idx: 81, plate: 'TN-02-JK-3310', type: 'Sedan', hrs: 2 },
+    { idx: 89, plate: 'TN-22-LM-6045', type: 'SUV', hrs: 1 },
+    { idx: 104, plate: 'TN-14-NP-8891', type: 'Bike', hrs: 2 },
+    { idx: 118, plate: 'TN-05-QR-2190', type: 'Sedan', hrs: 1 }
+  ];
+  samples.forEach(s => {
+    slots[s.idx].occupied = true;
+    slots[s.idx].plate = s.plate;
+    slots[s.idx].type = s.type;
+    slots[s.idx].time = '10:15 AM';
+    slots[s.idx].hours = s.hrs;
+    slots[s.idx].fee = s.hrs * RATES[s.type];
+  });
+  return {
+    slots,
+    logs: [
+      { message: 'SUV [TN-07-CD-9876] entered Level P1 (Slot 15)', type: 'enter' },
+      { message: 'Sedan [TN-01-AB-1234] entered Level P1 (Slot 4)', type: 'enter' }
+    ]
+  };
+}
+
+let state = JSON.parse(localStorage.getItem('parkwise_state') || 'null') || defaultState();
+
+function saveState() {
+  localStorage.setItem('parkwise_state', JSON.stringify(state));
+}
+
+function resetDemo() {
+  state = defaultState();
+  saveState();
+  renderAll();
+  showToast('Demo parking slots reset.');
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+function formatNow() {
+  return new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+}
+
+function parkVehicle(specificId = 0) {
+  const plateInput = document.getElementById('plate-input');
+  const plate = plateInput.value.trim().toUpperCase();
+  const type = document.getElementById('type-input').value;
+  const prefLevel = parseInt(document.getElementById('level-input').value, 10);
+
+  if (!plate) {
+    showToast('Enter a license plate number first.');
+    return;
+  }
+  const existing = state.slots.find(s => s.occupied && s.plate === plate);
+  if (existing) {
+    showToast(`Vehicle ${plate} is already parked in Slot #${existing.id}`);
+    return;
+  }
+
+  let chosen = null;
+  if (specificId >= 1 && specificId <= TOTAL_SLOTS && !state.slots[specificId - 1].occupied) {
+    chosen = state.slots[specificId - 1];
+  } else {
+    chosen = state.slots.find(s => !s.occupied && (prefLevel === 0 || s.level === prefLevel));
+  }
+
+  if (!chosen) {
+    showToast('No available slots for selected level.');
+    return;
+  }
+
+  chosen.occupied = true;
+  chosen.plate = plate;
+  chosen.type = type;
+  chosen.time = formatNow();
+  chosen.hours = 1;
+  chosen.fee = RATES[type] || 40;
+
+  state.logs.unshift({
+    message: `${type} [${plate}] entered Level P${chosen.level} (Slot ${chosen.id})`,
+    type: 'enter'
+  });
+  state.logs = state.logs.slice(0, 25);
+
+  plateInput.value = '';
+  saveState();
+  renderAll();
+  showToast(`Assigned Slot #${chosen.id} (Level P${chosen.level}) to ${plate}`);
+}
+
+function releaseSlot(slotId) {
+  const slot = state.slots[slotId - 1];
+  if (!slot || !slot.occupied) return;
+
+  const fee = slot.fee || RATES[slot.type] || 40;
+  const plate = slot.plate;
+  const type = slot.type;
+
+  state.logs.unshift({
+    message: `${type} [${plate}] exited (Slot ${slot.id} freed, Fee: ₹${fee})`,
+    type: 'exit'
+  });
+  state.logs = state.logs.slice(0, 25);
+
+  slot.occupied = false;
+  slot.plate = '';
+  slot.type = '';
+  slot.time = '';
+  slot.hours = 1;
+  slot.fee = 0;
+
+  saveState();
+  closeModal();
+  renderAll();
+  showToast(`Slot #${slotId} freed (${plate}) — Fee: ₹${fee}`);
+}
+
+function openSlotModal(slot) {
+  const modal = document.getElementById('slot-modal');
+  const title = document.getElementById('modal-title');
+  const info = document.getElementById('modal-info');
+  const btn = document.getElementById('modal-action-btn');
+
+  if (slot.occupied) {
+    title.textContent = `Slot #${slot.id} (Level P${slot.level}) — Occupied`;
+    info.innerHTML = `<strong>Plate:</strong> ${slot.plate}<br><strong>Vehicle:</strong> ${slot.type}<br><strong>Entry Time:</strong> ${slot.time}<br><strong>Calculated Fee:</strong> ₹${slot.fee} (${slot.hours} hr)`;
+    btn.textContent = `Checkout & Free Slot (₹${slot.fee})`;
+    btn.onclick = () => releaseSlot(slot.id);
+  } else {
+    title.textContent = `Slot #${slot.id} (Level P${slot.level}) — Available`;
+    info.textContent = 'Slot is open. Enter a license plate in the left form and click below to park directly in this slot.';
+    btn.textContent = 'Assign Entered Plate Here';
+    btn.onclick = () => { closeModal(); parkVehicle(slot.id); };
+  }
+  modal.classList.add('open');
+}
+
+function closeModal() {
+  document.getElementById('slot-modal').classList.remove('open');
+}
+
+function renderAll() {
+  const occ = state.slots.filter(s => s.occupied).length;
+  document.getElementById('kpi-total').textContent = TOTAL_SLOTS;
+  document.getElementById('kpi-occ').textContent = occ;
+  document.getElementById('kpi-avail').textContent = TOTAL_SLOTS - occ;
+
+  const p1 = document.getElementById('grid-p1');
+  const p2 = document.getElementById('grid-p2');
+  p1.innerHTML = '';
+  p2.innerHTML = '';
+
+  state.slots.forEach(s => {
+    const div = document.createElement('div');
+    div.className = 'slot' + (s.occupied ? ' occupied' : '');
+    div.innerHTML = `<span>${String(s.id).padStart(3, '0')}</span>` + (s.occupied ? `<span class="slot-plate">${s.plate}</span>` : '');
+    div.onclick = () => openSlotModal(s);
+    (s.level === 1 ? p1 : p2).appendChild(div);
+  });
+
+  const logBox = document.getElementById('log-list');
+  logBox.innerHTML = state.logs.map(l => `<div class="log-item ${l.type}">${l.message}</div>`).join('');
+  renderTable();
+}
+
+function renderTable() {
+  const q = (document.getElementById('search-box').value || '').toUpperCase();
+  const tbody = document.getElementById('occ-table-body');
+  const rows = state.slots.filter(s => s.occupied && s.plate.includes(q));
+  tbody.innerHTML = rows.map(s => `
+    <tr>
+      <td><strong>#${s.id}</strong></td>
+      <td>Level P${s.level}</td>
+      <td>${s.plate}</td>
+      <td>${s.type}</td>
+      <td>${s.time}</td>
+      <td><strong>₹${s.fee}</strong></td>
+      <td><button class="btn-release" style="padding:6px 12px;font-size:0.8rem" onclick="releaseSlot(${s.id})">Free Slot</button></td>
+    </tr>`).join('') || '<tr><td colspan="7" style="color:#64748b">No matching parked vehicles.</td></tr>';
+}
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-view').forEach(el => el.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  btn.classList.add('active');
+}
+
+renderAll();
+</script>
+</body>
+</html>
